@@ -4,7 +4,7 @@ project:
   name: just-ui
   slug: just-ui
   type: go
-  description: Go CLI and local web UI to browse and run Justfile recipes
+  description: Go CLI with Bubble Tea terminal UI to browse and run Justfile recipes
 
 update:
   mode: pull
@@ -59,15 +59,16 @@ workflows:
 
 tasks:
   bootstrap:
-    description: Check Go and just availability
+    description: Verify Go and just and install Go modules
     steps:
       - id: bootstrap-local
-        name: Validate local toolchain
+        name: Bootstrap Go dependencies
         command:
           exec: just
           args: [bootstrap]
   ci:
     description: Run automated checks
+    requires: [bootstrap]
     steps:
       - id: test
         name: Test Go packages
@@ -80,7 +81,7 @@ tasks:
           exec: go
           args: [vet, ./...]
   build:
-    description: Build Go executable
+    description: Build Go terminal executable
     requires: [ci]
     steps:
       - id: build-go
