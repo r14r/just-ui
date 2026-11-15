@@ -1,6 +1,6 @@
 # just-ui
 
-Version: **0.1.1**
+Version: **0.1.2**
 
 Local browser UI for selecting, configuring, and executing recipes from a Justfile. Implemented in Go (standard library only).
 
@@ -14,6 +14,7 @@ Local browser UI for selecting, configuring, and executing recipes from a Justfi
 ```sh
 git clone https://github.com/r14r/just-ui.git
 cd just-ui
+just bootstrap
 just check
 just build
 ./dist/just-ui --version
@@ -63,13 +64,13 @@ The prototype also recognizes Justfile `[group('Name')]` attributes. UI annotati
 
 The authoritative version lives in [VERSION](VERSION) and is compiled into the Go binary. Print it with `just-ui --version` or `just version`.
 
-**Repository policy: all changes go directly to `main`. Whenever code changes, increment the patch number in VERSION (e.g. `0.1.1` → `0.1.2`) in the same change.** Do not create branches or PRs unless this policy is explicitly revised.
+**Repository policy: all changes go directly to `main`. Whenever code changes, increment the patch number in VERSION (e.g. `0.1.2` → `0.1.2`) in the same change.** Do not create branches or PRs unless this policy is explicitly revised.
 
-The [update-cli.yaml](update-cli.yaml) follows the `schemaVersion: 2` convention used in other Go projects, targets `main`, and defines `ci`, `build`, and `setup` workflows. `Justfile` recipes provide local check, build, run, and version commands.
+The [update-cli.yaml](update-cli.yaml) follows the `schemaVersion: 2` convention used in other Go projects, targets `main`, and defines `bootstrap`, `ci`, `build`, and `setup` workflows. `Justfile` recipes provide local check, build, run, and version commands.
 
 ## Current scope / limitations
 
-Version 0.1.1 supports straightforward root-level recipes and static dropdown lists. The initial parser does not fully support imported Justfiles, expression-valued defaults, aliases or variadic arguments. Execution is delegated to `just` and captured after completion (not streamed). Jobs time out after 30 minutes; output is truncated at 1 MiB.
+Version 0.1.2 supports straightforward root-level recipes and static dropdown lists. The initial parser does not fully support imported Justfiles, expression-valued defaults, aliases or variadic arguments. Execution is delegated to `just` and captured after completion (not streamed). Jobs time out after 30 minutes; output is truncated at 1 MiB.
 
 The server only binds to loopback and uses origin and session-token checks. Do **not** expose it through a reverse proxy.
 
