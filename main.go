@@ -108,7 +108,7 @@ func run(args []string) error {
  versionFlag:=flags.Bool("version",false,"Print version")
  listFlag:=flags.Bool("list",false,"List recipes without TUI")
  chooser:=flags.Bool("chooser",false,"Chooser mode for JUST_CHOOSER (stdin names, stdout selected recipe)")
- if err:=flags.Parse(args);err!=nil{return err}
+ if err:=flags.Parse(args);err!=nil{if errors.Is(err,flag.ErrHelp){return nil};return err}
  if *versionFlag {b,_:=versionFS.ReadFile("VERSION");fmt.Println(strings.TrimSpace(string(b)));return nil}
  if _,err:=exec.LookPath("just");err!=nil{return errors.New("just executable missing from PATH")}
  file,err:=resolveJustfile(*justfile);if err!=nil{return err}
