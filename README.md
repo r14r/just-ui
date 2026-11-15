@@ -1,6 +1,6 @@
 # just-ui
 
-Version: **0.1.3**
+Version: **0.1.4**
 
 Interactive **terminal** command chooser and runner for Justfiles. No HTTP server, browser, or frontend build. Built using Go and Bubble Tea/Bubbles.
 
@@ -39,7 +39,7 @@ just-ui --version
 | q | Exit recipe list |
 | Ctrl+C | Quit TUI (recipes get terminal signals directly when running) |
 
-Recipe groups appear on each item. Output from the selected `just` recipe streams **directly to the terminal**. Recipes can prompt for input, including terminal-based programs. After the recipe exits, the chooser returns and displays its exit status.
+Recipe groups appear on each item. Output from the selected `just` recipe streams **directly to the terminal**. Recipes can prompt for input, including terminal-based programs. After the recipe finishes, its output remains on the terminal and just-ui displays `Press Enter to go back to just-ui`. Only Enter returns to the recipe chooser, including after failed commands. The original exit status is preserved.
 
 ### Just --choose compatibility
 
@@ -64,7 +64,7 @@ build-book book layout="advent":
     echo "Building {{book}} using {{layout}}"
 ```
 
-The form supports `text`, `password`, `number`, `path`, `select` and `checkbox` input types, static dropdown options, defaults, and required-parameter validation. `@ui confirm` requires confirmation before running a recipe. Recipe group attributes, for example `[group('Build')]`, are also recognized.
+The form supports `text`, `password`, `number`, `path`, `select` and `checkbox` input types, static dropdown options, defaults, and required-parameter validation. `@ui confirm` requires confirmation before running a recipe. Recipe group attributes, for example `[group('Build')]`, are also recognized. Place a recipe attribute **immediately before the recipe**, after any `@ui` comment annotations. Putting comments between a `[group(...)]` attribute and its recipe causes a `just` parser error.
 
 **Limitations:** Simple root-level recipe signatures are parsed by just-ui for UI metadata. Imported Justfiles, modules, aliases, expression-valued defaults and variadic parameters require a more complete `just --dump --dump-format json` integration. Dynamic dropdown sources are not yet implemented. The `--chooser` adapter supports a single selected recipe.
 
