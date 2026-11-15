@@ -1,77 +1,78 @@
 # just-ui
 
-Version: **0.1.2**
+Version: **0.1.3**
 
-Local browser UI for selecting, configuring, and executing recipes from a Justfile. Implemented in Go (standard library only).
+Interactive **terminal** command chooser and runner for Justfiles. No HTTP server, browser, or frontend build. Built using Go and Bubble Tea/Bubbles.
 
 ## Requirements
 
-- Go 1.22+
-- [just](https://github.com/casey/just) on PATH
+- Go 1.22+ (dependencies downloaded on first bootstrap)
+- [just](https://github.com/casey/just)
+- Interactive terminal (macOS and Linux)
 
 ## Getting started
 
 ```sh
-git clone https://github.com/r14r/just-ui.git
-cd just-ui
+git pull --ff-only origin main
 just bootstrap
 just check
 just build
-./dist/just-ui --version
-./dist/just-ui --justfile examples/justfile
+./dist/just-ui
 ```
 
-Alternatively: `go run . --justfile examples/justfile`.
-
-To use the UI with another project's Justfile:
+The CLI locates a Justfile from the current directory upward. Use `--justfile path/to/justfile` to choose a specific one.
 
 ```sh
-./dist/just-ui --justfile /path/to/project/justfile
+just-ui --justfile examples/justfile
+just-ui --list
+just-ui --version
 ```
 
-Use `--no-browser` for terminal-only startup, or `--listen 127.0.0.1:8080` for a fixed local port.
+### Navigation
 
-## Inline UI annotations
+| Key | Action |
+| --- | --- |
+| Up / Down, j / k | Browse recipes and dropdown values |
+| / | Fuzzy search by recipe name, group, label, description |
+| Enter | Choose recipe, confirm parameter, execute |
+| Esc | Return to previous parameter / recipe selection |
+| q | Exit recipe list |
+| Ctrl+C | Quit TUI (recipes get terminal signals directly when running) |
 
-The UI reads ordinary Justfile recipe signatures plus optional `@ui` comments directly above each recipe:
+Recipe groups appear on each item. Output from the selected `just` recipe streams **directly to the terminal**. Recipes can prompt for input, including terminal-based programs. After the recipe exits, the chooser returns and displays its exit status.
+
+### Just --choose compatibility
+
+```sh
+export JUST_CHOOSER="just-ui --chooser"
+just --choose
+```
+
+When used as a chooser, just-ui reads newline-separated recipe names from standard input, displays a selectable list on the controlling terminal, and writes **only the chosen recipe name** to stdout. In this compatibility mode, `just` executes the recipe and handles its own parameters. In normal `just-ui` mode, parameters are entered in the terminal UI before execution.
+
+### Rich parameters
+
+Optional `@ui` comments provide information not available from Justfile recipe signatures:
 
 ```just
 # @ui group Books
 # @ui label Build PDF
-# @ui description Build one book with the chosen layout
+# @ui description Build one book with a chosen layout
 # @ui param book type=text label=Book_ID
 # @ui param layout type=select options=advent|modern|classic default=advent
 build-book book layout="advent":
-    echo "Build {{book}} with {{layout}}"
+    echo "Building {{book}} using {{layout}}"
 ```
 
-| Annotation | Purpose |
-| --- | --- |
-| `@ui group NAME` | Group in sidebar |
-| `@ui label TEXT` | Display label |
-| `@ui description TEXT` | Help text |
-| `@ui confirm` | Require confirmation before executing |
-| `@ui param NAME type=TYPE` | Parameter input type |
-| `options=a\|b\|c` | Static dropdown values |
-| `default=VALUE` | Default value |
-| `label=TEXT` | Parameter display label (use underscores for spaces) |
+The form supports `text`, `password`, `number`, `path`, `select` and `checkbox` input types, static dropdown options, defaults, and required-parameter validation. `@ui confirm` requires confirmation before running a recipe. Recipe group attributes, for example `[group('Build')]`, are also recognized.
 
-Valid input types: `text`, `number`, `password`, `checkbox`, `path`, `select`.
+**Limitations:** Simple root-level recipe signatures are parsed by just-ui for UI metadata. Imported Justfiles, modules, aliases, expression-valued defaults and variadic parameters require a more complete `just --dump --dump-format json` integration. Dynamic dropdown sources are not yet implemented. The `--chooser` adapter supports a single selected recipe.
 
-The prototype also recognizes Justfile `[group('Name')]` attributes. UI annotations may override group labels. Metadata cannot introduce arguments that are absent from the recipe signature.
+## Development and releases
 
-## Versioning and repository workflow
+- Work directly on `main`, without feature branches or PRs.
+- Maintain `VERSION` and `update-cli.yaml`.
+- Increment the semantic-version **patch** component whenever implementation code changes.
+- Run `just bootstrap`, `just check`, and `just build`.
 
-The authoritative version lives in [VERSION](VERSION) and is compiled into the Go binary. Print it with `just-ui --version` or `just version`.
-
-**Repository policy: all changes go directly to `main`. Whenever code changes, increment the patch number in VERSION (e.g. `0.1.2` → `0.1.2`) in the same change.** Do not create branches or PRs unless this policy is explicitly revised.
-
-The [update-cli.yaml](update-cli.yaml) follows the `schemaVersion: 2` convention used in other Go projects, targets `main`, and defines `bootstrap`, `ci`, `build`, and `setup` workflows. `Justfile` recipes provide local check, build, run, and version commands.
-
-## Current scope / limitations
-
-Version 0.1.2 supports straightforward root-level recipes and static dropdown lists. The initial parser does not fully support imported Justfiles, expression-valued defaults, aliases or variadic arguments. Execution is delegated to `just` and captured after completion (not streamed). Jobs time out after 30 minutes; output is truncated at 1 MiB.
-
-The server only binds to loopback and uses origin and session-token checks. Do **not** expose it through a reverse proxy.
-
-For future versions, prefer `just --dump --dump-format json` as the authoritative recipe parser; use an optional `.just-ui.yaml` overlay for dynamic dropdowns and complex validation.
+`update-cli.yaml` uses schema v2 and runs `just bootstrap` before Go checks/builds.
