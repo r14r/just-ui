@@ -1,6 +1,6 @@
 # just-ui
 
-Version: **0.1.4**
+Version: **0.1.5**
 
 Interactive **terminal** command chooser and runner for Justfiles. No HTTP server, browser, or frontend build. Built using Go and Bubble Tea/Bubbles.
 
@@ -28,14 +28,19 @@ just-ui --list
 just-ui --version
 ```
 
+### Two-column layout
+
+The left pane takes **30%** of terminal width for searchable recipes; the right pane takes **70%** for parameter input, dropdowns, values, and the generated shell command. Select a recipe with Enter to configure it. Once all parameters are entered, the right pane displays the **exact POSIX-shell-quoted command** and requests confirmation before execution. The command is also printed above the live recipe output. Password fields are masked in displayed commands, while their actual values are still supplied to `just`.
+
 ### Navigation
 
 | Key | Action |
 | --- | --- |
 | Up / Down, j / k | Browse recipes and dropdown values |
 | / | Fuzzy search by recipe name, group, label, description |
-| Enter | Choose recipe, confirm parameter, execute |
+| Enter | Select recipe, edit parameter, confirm execution |
 | Esc | Return to previous parameter / recipe selection |
+| e | Edit parameters again from the confirmation screen |
 | q | Exit recipe list |
 | Ctrl+C | Quit TUI (recipes get terminal signals directly when running) |
 
