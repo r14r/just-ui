@@ -1,0 +1,79 @@
+schemaVersion: 2
+
+project:
+  name: just-ui
+  slug: just-ui
+  type: go
+  description: Go CLI and local web UI to browse and run Justfile recipes
+
+update:
+  mode: pull
+  source:
+    type: repository
+    repository: https://github.com/r14r/just-ui.git
+    ref: main
+  releaseDir: release
+  currentDir: current
+  backup:
+    directory: backup
+    keep: 3
+  retention:
+    releases: 5
+  sync:
+    preserve:
+      - .git/
+      - .env
+      - .env.*
+    keepOnSetupError: false
+  docker:
+    lifecycle: disabled
+  healthcheck:
+    type: none
+
+defaults:
+  timeout: 30m
+  failFast: true
+
+requirements:
+  commands: [go, git, just]
+  optionalCommands: [gh, update-cli]
+
+run:
+  description: Show just-ui command-line help
+  command: ./dist/just-ui --help
+  cwd: .
+
+workflows:
+  setup:
+    description: Test and build the Go CLI
+    tasks: [build]
+  ci:
+    description: Run Go unit tests and static checks
+    tasks: [ci]
+  build:
+    description: Build the just-ui executable
+    tasks: [build]
+
+tasks:
+  ci:
+    description: Run automated checks
+    steps:
+      - id: test
+        name: Test Go packages
+        command:
+          exec: go
+          args: [test, ./...]
+      - id: vet
+        name: Vet Go packages
+        command:
+          exec: go
+          args: [vet, ./...]
+  build:
+    description: Build Go executable
+    requires: [ci]
+    steps:
+      - id: build-go
+        name: Compile just-ui
+        command:
+          exec: go
+          args: [build, -o, dist/just-ui, .]
