@@ -5,10 +5,10 @@
 test suite="all":
     echo "Testing {{suite}}"
 
-[group('Build')]
 # @ui label Build application
 # @ui description Build for a specified operating system
 # @ui param target type=select options=linux|darwin|windows default=linux
+[group('Build')]
 build target="linux":
     echo "Building for {{target}}"
 
