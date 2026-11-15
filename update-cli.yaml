@@ -44,6 +44,9 @@ run:
   cwd: .
 
 workflows:
+  bootstrap:
+    description: Verify local prerequisites for just-ui
+    tasks: [bootstrap]
   setup:
     description: Test and build the Go CLI
     tasks: [build]
@@ -55,6 +58,14 @@ workflows:
     tasks: [build]
 
 tasks:
+  bootstrap:
+    description: Check Go and just availability
+    steps:
+      - id: bootstrap-local
+        name: Validate local toolchain
+        command:
+          exec: just
+          args: [bootstrap]
   ci:
     description: Run automated checks
     steps:
