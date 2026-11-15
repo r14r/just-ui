@@ -3,6 +3,10 @@ package main
 import (
     "path/filepath"
     "testing"
+    "os"
+    "os/exec"
+    "strings"
+    "errors"
 )
 
 func TestParseExample(t *testing.T) {
@@ -56,4 +60,24 @@ func TestResolveJustfileExplicit(t *testing.T) {
  filename,err:=resolveJustfile(filepath.Join("examples","justfile"))
  if err!=nil{t.Fatal(err)}
  if !filepath.IsAbs(filename){t.Fatal("Justfile must resolve to absolute path")}
+}
+
+func TestExampleJustfileValid(t *testing.T) {
+ if _,err:=exec.LookPath("just");err!=nil{t.Skip("just not installed")}
+ cmd:=exec.Command("just","--justfile","examples/justfile","--summary")
+ if output,err:=cmd.CombinedOutput();err!=nil{t.Fatalf("example Justfile invalid: %v\n%s",err,output)}
+}
+
+func TestExecutionWaitsForEnterAndPreservesStatus(t *testing.T) {
+ directory:=t.TempDir()
+ fake:=filepath.Join(directory,"just")
+ script:="#!/bin/sh\nprintf 'recipe output\\n'\nexit 7\n"
+ if err:=os.WriteFile(fake,[]byte(script),0755);err!=nil{t.Fatal(err)}
+ t.Setenv("PATH",directory+string(os.PathListSeparator)+os.Getenv("PATH"))
+ cmd:=executionCommand(filepath.Join(directory,"justfile"),"test",[]string{"input"})
+ cmd.Stdin=strings.NewReader("\n")
+ output,err:=cmd.CombinedOutput()
+ if !strings.Contains(string(output),"recipe output")||!strings.Contains(string(output),"Press Enter to go back to just-ui"){t.Fatalf("missing output or prompt: %q",output)}
+ var exit *exec.ExitError
+ if !errors.As(err,&exit)||exit.ExitCode()!=7{t.Fatalf("exit status not preserved: %v",err)}
 }
