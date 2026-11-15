@@ -1,37 +1,76 @@
 # just-ui
 
-Local web UI for executing recipes from a Justfile, implemented in Go without third-party dependencies.
+Version: **0.1.1**
 
-## Setup
+Local browser UI for selecting, configuring, and executing recipes from a Justfile. Implemented in Go (standard library only).
 
-Requires Go 1.22+ and `just` on PATH.
+## Requirements
+
+- Go 1.22+
+- [just](https://github.com/casey/just) on PATH
+
+## Getting started
 
 ```sh
-go test ./...
-go build -o just-ui .
-./just-ui --justfile examples/justfile
+git clone https://github.com/r14r/just-ui.git
+cd just-ui
+just check
+just build
+./dist/just-ui --version
+./dist/just-ui --justfile examples/justfile
 ```
 
-Use `--no-browser` for headless operation. The HTTP server is bound to loopback.
+Alternatively: `go run . --justfile examples/justfile`.
 
-## UI annotations
+To use the UI with another project's Justfile:
 
-Place optional comments directly before a recipe:
+```sh
+./dist/just-ui --justfile /path/to/project/justfile
+```
+
+Use `--no-browser` for terminal-only startup, or `--listen 127.0.0.1:8080` for a fixed local port.
+
+## Inline UI annotations
+
+The UI reads ordinary Justfile recipe signatures plus optional `@ui` comments directly above each recipe:
 
 ```just
 # @ui group Books
 # @ui label Build PDF
-# @ui description Build one book with a chosen layout
+# @ui description Build one book with the chosen layout
 # @ui param book type=text label=Book_ID
 # @ui param layout type=select options=advent|modern|classic default=advent
 build-book book layout="advent":
     echo "Build {{book}} with {{layout}}"
 ```
 
-Annotations: `@ui group`, `@ui label`, `@ui description`, `@ui confirm`, `@ui param NAME type=text|number|password|checkbox|select|path options=A|B default=X label=Text`.
+| Annotation | Purpose |
+| --- | --- |
+| `@ui group NAME` | Group in sidebar |
+| `@ui label TEXT` | Display label |
+| `@ui description TEXT` | Help text |
+| `@ui confirm` | Require confirmation before executing |
+| `@ui param NAME type=TYPE` | Parameter input type |
+| `options=a\|b\|c` | Static dropdown values |
+| `default=VALUE` | Default value |
+| `label=TEXT` | Parameter display label (use underscores for spaces) |
 
-## Current scope
+Valid input types: `text`, `number`, `password`, `checkbox`, `path`, `select`.
 
-Prototype v0.1 supports simple root-level recipes and static dropdowns. Modules, imports, aliases, expressions, variadic arguments, live streaming and cancellation are not yet supported. Syntax validation and execution are delegated to `just`. Output is limited to 1 MiB and processes time out after 30 minutes. The local HTTP service checks request origin and a session token. Do not expose it over a proxy.
+The prototype also recognizes Justfile `[group('Name')]` attributes. UI annotations may override group labels. Metadata cannot introduce arguments that are absent from the recipe signature.
 
-For future releases, prefer `just --dump --dump-format json` for recipe discovery. Support `.just-ui.yaml` overlays for dynamic selects and other metadata.
+## Versioning and repository workflow
+
+The authoritative version lives in [VERSION](VERSION) and is compiled into the Go binary. Print it with `just-ui --version` or `just version`.
+
+**Repository policy: all changes go directly to `main`. Whenever code changes, increment the patch number in VERSION (e.g. `0.1.1` → `0.1.2`) in the same change.** Do not create branches or PRs unless this policy is explicitly revised.
+
+The [update-cli.yaml](update-cli.yaml) follows the `schemaVersion: 2` convention used in other Go projects, targets `main`, and defines `ci`, `build`, and `setup` workflows. `Justfile` recipes provide local check, build, run, and version commands.
+
+## Current scope / limitations
+
+Version 0.1.1 supports straightforward root-level recipes and static dropdown lists. The initial parser does not fully support imported Justfiles, expression-valued defaults, aliases or variadic arguments. Execution is delegated to `just` and captured after completion (not streamed). Jobs time out after 30 minutes; output is truncated at 1 MiB.
+
+The server only binds to loopback and uses origin and session-token checks. Do **not** expose it through a reverse proxy.
+
+For future versions, prefer `just --dump --dump-format json` as the authoritative recipe parser; use an optional `.just-ui.yaml` overlay for dynamic dropdowns and complex validation.
