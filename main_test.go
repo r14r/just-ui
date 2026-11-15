@@ -81,3 +81,32 @@ func TestExecutionWaitsForEnterAndPreservesStatus(t *testing.T) {
  var exit *exec.ExitError
  if !errors.As(err,&exit)||exit.ExitCode()!=7{t.Fatalf("exit status not preserved: %v",err)}
 }
+
+
+func TestColumnWidths(t *testing.T) {
+ model:=newModel("test.just",Catalog{},false)
+ for _,width:=range []int{80,100,120,200}{
+  model.width=width
+  left,right:=model.panelWidths()
+  if left+right!=width{t.Fatalf("width %d: %d + %d",width,left,right)}
+  if left!=width*30/100{t.Fatalf("width %d expected 30%%, got %d",width,left)}
+ }
+}
+
+func TestCommandPreviewShellQuotes(t *testing.T){
+ cmd:=commandLine("/some dir/justfile","build",[]string{"hello world","it's ok","", "$(rm -rf /)"})
+ for _,part:=range []string{"'/some dir/justfile'","'hello world'","'it'\\''s ok'","''","'$(rm -rf /)'"}{
+  if !strings.Contains(cmd,part){t.Errorf("missing quoted %q in %q",part,cmd)}
+ }
+}
+
+func TestParameterPanelSelection(t *testing.T){
+ catalog,err:=parseFile(filepath.Join("examples","justfile"))
+ if err!=nil{t.Fatal(err)}
+ model:=newModel("examples/justfile",catalog,false)
+ model.width=100;model.height=30;model.resize()
+ model.selected=catalog.Recipes[0];model.hasSelection=true
+ model.values=make([]string,len(model.selected.Params))
+ panel:=model.rightPanel()
+ if !strings.Contains(panel,"Command line:"){t.Fatalf("missing command preview: %s",panel)}
+}
