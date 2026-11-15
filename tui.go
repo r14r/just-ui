@@ -4,7 +4,6 @@ import (
  "bufio"
  "errors"
  "fmt"
- "io"
  "os"
  "os/exec"
  "path/filepath"
@@ -141,40 +140,20 @@ func(m *appModel) back()tea.Cmd{
  if m.argument==0{m.stage=browsing;return nil}
  m.argument--;return m.advance()
 }
-func(m *appModel) execute()tea.Cmd{
- args:=[]string{"--justfile",m.file,m.selected.Name};args=append(args,m.values...)
- executable,err:=os.Executable()
- if err!=nil{
-  m.stage=browsing
-  m.err="Cannot start command: "+err.Error()
-  return nil
- }
- // Execute through our own child process so the command output remains on screen
- // until Enter is pressed. Bubble Tea suspends its alternate-screen UI.
- cmd:=exec.Command(executable,append([]string{"--exec-recipe"},args...)...)
- cmd.Dir=filepath.Dir(m.file)
- m.stage=runningStage
- return tea.ExecProcess(cmd,func(err error)tea.Msg{return commandFinished{err:err}})
-}
-// runRecipeAndWait runs a selected recipe with a connected terminal, then waits
-// for Enter before Bubble Tea resumes its alternate-screen interface.
-func runRecipeAndWait(file, recipe string, values []string, stdin io.Reader, stdout, stderr io.Writer) error {
- args:=append([]string{"--justfile",file,recipe},values...)
- cmd:=exec.Command("just",args...)
+// executionCommand runs just with connected terminal streams. The shell waits
+// for Enter even when the recipe exits unsuccessfully, preserving the output.
+func executionCommand(file, recipe string, values []string) *exec.Cmd {
+ script := "just \"$@\"; status=$?; printf '\\nPress Enter to go back to just-ui'; IFS= read -r _ || true; printf '\\n'; exit \"$status\""
+ args:=append([]string{"-c",script,"just-ui","--justfile",file,recipe},values...)
+ cmd:=exec.Command("sh",args...)
  cmd.Dir=filepath.Dir(file)
- cmd.Stdin=stdin
- cmd.Stdout=stdout
- cmd.Stderr=stderr
- err:=cmd.Run()
- if err!=nil {
-  fmt.Fprintf(stderr,"\\nCommand failed: %v\\n",err)
- }
- fmt.Fprint(stdout,"\\nPress Enter to go back to just-ui")
- // If the command previously read from stdin, continue with the same stream.
- _,readErr:=bufio.NewReader(stdin).ReadString('\\n')
- fmt.Fprintln(stdout)
- if readErr!=nil{return fmt.Errorf("waiting for Enter: %w",readErr)}
- return err
+ return cmd
+}
+func(m *appModel) execute()tea.Cmd{
+ cmd:=executionCommand(m.file,m.selected.Name,m.values)
+ m.stage=runningStage
+ // Bubble Tea suspends the alternate screen until the recipe and Enter prompt exit.
+ return tea.ExecProcess(cmd,func(err error)tea.Msg{return commandFinished{err:err}})
 }
 func(m appModel) View()string{
  switch m.stage{
