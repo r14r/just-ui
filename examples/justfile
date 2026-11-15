@@ -1,0 +1,26 @@
+# @ui group Development
+# @ui label Run tests
+# @ui description Run the selected test suite
+# @ui param suite type=select options=all|unit|integration default=all label=Test_suite
+test suite="all":
+    echo "Testing {{suite}}"
+
+[group('Build')]
+# @ui label Build application
+# @ui description Build for a specified operating system
+# @ui param target type=select options=linux|darwin|windows default=linux
+build target="linux":
+    echo "Building for {{target}}"
+
+# @ui group Books
+# @ui label Build a book
+# @ui param book type=text label=Book_ID
+# @ui param layout type=select options=advent|modern|classic default=advent
+build-book book layout="advent":
+    echo "Build book {{book}} with {{layout}}"
+
+# @ui group Maintenance
+# @ui label Clean generated outputs
+# @ui confirm
+clean:
+    echo "Clean is a demo - no files removed"
