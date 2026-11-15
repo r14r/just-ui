@@ -114,7 +114,7 @@ func run(args []string) error {
  file,err:=resolveJustfile(*justfile);if err!=nil{return err}
  if output,err:=exec.Command("just","--justfile",file,"--summary").CombinedOutput();err!=nil{return fmt.Errorf("invalid Justfile: %w\n%s",err,output)}
  catalog,err:=parseFile(file);if err!=nil{return err}
- if *listFlag{for _,r:=range catalog.Recipes{fmt.Printf("%-20s %-25s %s\\n",r.Group,r.Name,r.Description)};return nil}
+ if *listFlag{for _,r:=range catalog.Recipes{fmt.Printf("%-20s %-25s %s\n",r.Group,r.Name,r.Description)};return nil}
  if *chooser{return runChooser(catalog)}
  return runTUI(file,catalog)
 }
