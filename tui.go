@@ -188,6 +188,7 @@ func commandLine(file,recipe string,values []string)string{
 }
 func(m appModel) displayedCommand()string{
  args:=append([]string(nil),m.values...)
+ if m.stage==inputStage&&m.argument<len(args){args[m.argument]=m.entry.Value()}
  // Password values are not echoed into screen contents or terminal scrollback.
  for i,p:=range m.selected.Params{
   if p.Type=="password"&&i<len(args){args[i]="<hidden>"}
