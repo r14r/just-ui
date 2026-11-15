@@ -46,7 +46,9 @@ func newModel(file string,catalog Catalog,chooser bool)appModel{
  l.SetShowStatusBar(true);l.SetShowHelp(true);l.SetFilteringEnabled(true)
  l.DisableQuitKeybindings()
  entry:=textinput.New();entry.Prompt="> ";entry.Width=50
- return appModel{file:file,recipes:l,entry:entry,chooser:chooser}
+ choices:=list.New([]list.Item{},list.NewDefaultDelegate(),80,20)
+ choices.DisableQuitKeybindings()
+ return appModel{file:file,recipes:l,choices:choices,entry:entry,chooser:chooser}
 }
 func(m appModel) Init()tea.Cmd{return nil}
 func(m appModel) Update(message tea.Msg)(tea.Model,tea.Cmd){
