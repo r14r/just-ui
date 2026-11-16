@@ -85,4 +85,6 @@ The form supports `text`, `password`, `number`, `path`, `select` and `checkbox` 
 - Increment the semantic-version **patch** component whenever implementation code changes.
 - Run `just bootstrap`, `just check`, and `just build`.
 
-Every recipe in the project's Justfile has a human-readable `@ui description` comment, and the TUI displays real line breaks rather than literal `\\n` sequences.\n\n`update-cli.yaml` uses schema v2 and runs `just bootstrap` before Go checks/builds.
+Every recipe in the project's Justfile has a human-readable `@ui description` comment, and the TUI displays real line breaks rather than literal `\\n` sequences.
+
+`update-cli.yaml` uses schema v2 and runs `just bootstrap` before Go checks/builds.
