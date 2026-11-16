@@ -1,6 +1,6 @@
 # just-ui
 
-Version: **0.1.6**
+Version: **0.1.7**
 
 Interactive **terminal** command chooser and runner for Justfiles. No HTTP server, browser, or frontend build. Built using Go and Bubble Tea/Bubbles.
 
@@ -35,7 +35,7 @@ Run `just install` to execute the checks, build the binary and install it as `/u
 
 ### Two-column layout
 
-The left pane takes **30%** of terminal width for searchable recipes; the right pane takes **70%** for parameter input, dropdowns, values, and the generated shell command. Select a recipe with Enter to configure it. Once all parameters are entered, the right pane displays the **exact POSIX-shell-quoted command** and requests confirmation before execution. The command is also printed above the live recipe output. Password fields are masked in displayed commands, while their actual values are still supplied to `just`.
+The left pane takes **30%** of terminal width and always shows the searchable recipe list. Move the cursor with ↑/↓ to preview **the highlighted recipe's description, parameter requirements, defaults, allowed values and numeric ranges** in the 70% right pane, without selecting the recipe. Press Enter to begin a focused parameter wizard: the right pane displays only the current parameter's description and its text input or selectable choices. Enter advances to the next parameter. After the last parameter, a confirmation screen displays all values and the POSIX-shell-quoted command. The command is also printed above the live recipe output. Password fields are masked in displayed commands, while their actual values are still supplied to `just`.
 
 ### Navigation
 
@@ -68,13 +68,13 @@ Optional `@ui` comments provide information not available from Justfile recipe s
 # @ui group Books
 # @ui label Build PDF
 # @ui description Build one book with a chosen layout
-# @ui param book type=text label=Book_ID
-# @ui param layout type=select options=advent|modern|classic default=advent
+# @ui param book type=number label=Book_ID min=1 max=99 description=Book_number_from_1_to_99
+# @ui param layout type=select options=advent|modern|classic default=advent description=Choose_a_layout
 build-book book layout="advent":
     echo "Building {{book}} using {{layout}}"
 ```
 
-The form supports `text`, `password`, `number`, `path`, `select` and `checkbox` input types, static dropdown options, defaults, and required-parameter validation. `@ui confirm` requires confirmation before running a recipe. Recipe group attributes, for example `[group('Build')]`, are also recognized. Place a recipe attribute **immediately before the recipe**, after any `@ui` comment annotations. Putting comments between a `[group(...)]` attribute and its recipe causes a `just` parser error.
+The form supports `text`, `password`, `number`, `path`, `select` and `checkbox` input types, static dropdown options, defaults, required-parameter validation, and optional numeric `min`/`max` constraints. Per-parameter `description` text uses underscores in inline `@ui` metadata to represent spaces. `@ui confirm` requires confirmation before running a recipe. Recipe group attributes, for example `[group('Build')]`, are also recognized. Place a recipe attribute **immediately before the recipe**, after any `@ui` comment annotations. Putting comments between a `[group(...)]` attribute and its recipe causes a `just` parser error.
 
 **Limitations:** Simple root-level recipe signatures are parsed by just-ui for UI metadata. Imported Justfiles, modules, aliases, expression-valued defaults and variadic parameters require a more complete `just --dump --dump-format json` integration. Dynamic dropdown sources are not yet implemented. The `--chooser` adapter supports a single selected recipe.
 
@@ -85,4 +85,4 @@ The form supports `text`, `password`, `number`, `path`, `select` and `checkbox` 
 - Increment the semantic-version **patch** component whenever implementation code changes.
 - Run `just bootstrap`, `just check`, and `just build`.
 
-`update-cli.yaml` uses schema v2 and runs `just bootstrap` before Go checks/builds.
+Every recipe in the project's Justfile has a human-readable `@ui description` comment, and the TUI displays real line breaks rather than literal `\\n` sequences.\n\n`update-cli.yaml` uses schema v2 and runs `just bootstrap` before Go checks/builds.
