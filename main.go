@@ -37,46 +37,7 @@ type Recipe struct {
  Params []Param `json:"params"`
 }
 type Catalog struct { Recipes []Recipe `json:"recipes"` }
-var header = regexp.MustCompile(`^([A-Za-z_][A-Za-z0-9_-]*)(\s+[^:]*)?:\s*(?:[^#]*)?(?:#.*)?package main
-
-import (
- "bufio"
- "embed"
- "errors"
- "flag"
- "fmt"
- "os"
- "os/exec"
- "path/filepath"
- "regexp"
- "sort"
- "strings"
-)
-
-//go:embed VERSION
-var versionFS embed.FS
-
-type Param struct {
- Name string `json:"name"`
- Label string `json:"label"`
- Description string `json:"description,omitempty"`
- Min string `json:"min,omitempty"`
- Max string `json:"max,omitempty"`
- Type string `json:"type"`
- Required bool `json:"required"`
- Default string `json:"default,omitempty"`
- Options []string `json:"options,omitempty"`
-}
-type Recipe struct {
- Name string `json:"name"`
- Label string `json:"label"`
- Group string `json:"group"`
- Description string `json:"description"`
- Confirm bool `json:"confirm"`
- Params []Param `json:"params"`
-}
-type Catalog struct { Recipes []Recipe `json:"recipes"` }
-)
+var header = regexp.MustCompile(`^([A-Za-z_][A-Za-z0-9_-]*)(\s+[^:]*)?:\s*(?:[^#]*)?(?:#.*)?$`)
 var argToken = regexp.MustCompile(`(?:"[^"]*"|'[^']*'|[^\s]+)`)
 var groupAttr = regexp.MustCompile(`\bgroup\(['"]([^'"]+)['"]\)`)
 
