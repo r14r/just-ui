@@ -1,6 +1,6 @@
 # just-ui
 
-Version: **0.1.7**
+Version: **0.1.8**
 
 Interactive **terminal** command chooser and runner for Justfiles. No HTTP server, browser, or frontend build. Built using Go and Bubble Tea/Bubbles.
 
@@ -75,6 +75,8 @@ build-book book layout="advent":
 ```
 
 The form supports `text`, `password`, `number`, `path`, `select` and `checkbox` input types, static dropdown options, defaults, required-parameter validation, and optional numeric `min`/`max` constraints. Per-parameter `description` text uses underscores in inline `@ui` metadata to represent spaces. `@ui confirm` requires confirmation before running a recipe. Recipe group attributes, for example `[group('Build')]`, are also recognized. Place a recipe attribute **immediately before the recipe**, after any `@ui` comment annotations. Putting comments between a `[group(...)]` attribute and its recipe causes a `just` parser error.
+
+**Parser behavior:** Justfile settings and variable assignments using `:=` are excluded from the recipe list. While navigating, the right panel shows recipe help; after the final parameter, confirmation shows the exact command line. Both behaviors have regression tests.
 
 **Limitations:** Simple root-level recipe signatures are parsed by just-ui for UI metadata. Imported Justfiles, modules, aliases, expression-valued defaults and variadic parameters require a more complete `just --dump --dump-format json` integration. Dynamic dropdown sources are not yet implemented. The `--chooser` adapter supports a single selected recipe.
 
