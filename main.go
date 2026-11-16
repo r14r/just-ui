@@ -20,6 +20,9 @@ var versionFS embed.FS
 type Param struct {
  Name string `json:"name"`
  Label string `json:"label"`
+ Description string `json:"description,omitempty"`
+ Min string `json:"min,omitempty"`
+ Max string `json:"max,omitempty"`
  Type string `json:"type"`
  Required bool `json:"required"`
  Default string `json:"default,omitempty"`
@@ -75,6 +78,9 @@ func parseFile(path string) (Catalog,error) {
      switch pair[0]{
      case "type":p.Type=val
      case "label":p.Label=strings.ReplaceAll(val,"_"," ")
+     case "description":p.Description=strings.ReplaceAll(val,"_"," ")
+     case "min":p.Min=val
+     case "max":p.Max=val
      case "default":p.Default=val
      case "options":p.Options=strings.Split(val,"|")
      }
