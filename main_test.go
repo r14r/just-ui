@@ -157,7 +157,7 @@ func TestFocusedParameterWizard(t *testing.T){
    if !strings.Contains(right,"PARAMETER 1 OF 2")||strings.Contains(right,"Choose the layout template"){t.Fatalf("wizard shows more than active parameter: %s",right)}
    updated,_:=m.Update(tea.KeyMsg{Type:tea.KeyEnter})
    m=updated.(appModel)
-   if m.stage!=inputStage{ /* Required empty value must remain on input field. */ }
+   if m.stage!=inputStage||m.err==""{t.Fatal("required parameter must remain active and show an error")}
    return
   }
  }
