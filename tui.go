@@ -135,7 +135,11 @@ func(m appModel) Update(message tea.Msg)(tea.Model,tea.Cmd){
 }
 func validate(p Param,v string)error {
  if p.Required&&strings.TrimSpace(v)==""{return fmt.Errorf("%s is required",p.Label)}
- if p.Type=="number"&&v!=""{if _,err:=strconv.ParseFloat(v,64);err!=nil{return fmt.Errorf("%s must be a number",p.Label)}}
+ if p.Type=="number"&&v!=""{
+  value,err:=strconv.ParseFloat(v,64);if err!=nil{return fmt.Errorf("%s must be a number",p.Label)}
+  if p.Min!=""{min,err:=strconv.ParseFloat(p.Min,64);if err!=nil{return fmt.Errorf("invalid minimum for %s",p.Label)};if value<min{return fmt.Errorf("%s must be at least %s",p.Label,p.Min)}}
+  if p.Max!=""{max,err:=strconv.ParseFloat(p.Max,64);if err!=nil{return fmt.Errorf("invalid maximum for %s",p.Label)};if value>max{return fmt.Errorf("%s must be at most %s",p.Label,p.Max)}}
+ }
  if p.Type=="select"&&len(p.Options)>0 {
   for _,opt:=range p.Options{if opt==v{return nil}}
   return errors.New("invalid select option")
@@ -216,42 +220,70 @@ func(m *appModel) execute()tea.Cmd{
  m.stage=runningStage
  return tea.ExecProcess(cmd,func(err error)tea.Msg{return commandFinished{err:err}})
 }
+func(m appModel) previewRecipe()(Recipe,bool){
+ if m.stage!=browsing && m.hasSelection{return m.selected,true}
+ if item,ok:=m.recipes.SelectedItem().(recipeItem);ok{return item.recipe,true}
+ return Recipe{},false
+}
+func parameterHelp(p Param)string{
+ var lines []string
+ if p.Description!=""{lines=append(lines,p.Description)}
+ if p.Required{lines=append(lines,"Required: yes")}else{lines=append(lines,"Required: no")}
+ lines=append(lines,"Type: "+p.Type)
+ if p.Default!=""&&p.Type!="password"{lines=append(lines,"Default: "+p.Default)}
+ if p.Type=="select"&&len(p.Options)>0{lines=append(lines,"Allowed values: "+strings.Join(p.Options,", "))}
+ if p.Type=="checkbox"{lines=append(lines,"Allowed values: true, false")}
+ if p.Min!=""||p.Max!=""{
+  switch{case p.Min!=""&&p.Max!="":lines=append(lines,"Range: "+p.Min+" to "+p.Max)
+  case p.Min!="":lines=append(lines,"Minimum: "+p.Min)
+  case p.Max!="":lines=append(lines,"Maximum: "+p.Max)}
+ }
+ return strings.Join(lines,"\n")
+}
 func(m appModel) rightPanel()string{
- if !m.hasSelection{
-  if item,ok:=m.recipes.SelectedItem().(recipeItem);ok{
-   return "Select a command\\n\\n"+item.recipe.Label+"\\n"+item.recipe.Description+"\\n\\nPress Enter to configure its parameters."
-  }
-  return "No commands available."
- }
+ recipe,ok:=m.previewRecipe()
+ if !ok{return "No commands available."}
  var b strings.Builder
- fmt.Fprintf(&b,"%s\\n%s\\n\\n",m.selected.Label,m.selected.Description)
- if len(m.selected.Params)==0 {b.WriteString("No parameters required.\\n")}
- for i,p:=range m.selected.Params{
-  val:=p.Default
-  if i<len(m.values)&&m.values[i]!="" {val=m.values[i]}
-  if m.stage==inputStage&&i==m.argument {val=m.entry.Value()}
-  if p.Type=="password"&&val!=""{val="<hidden>"}
-  if val==""{val="(not set)"}
-  marker:="  ";if i==m.argument&&(m.stage==inputStage||m.stage==choiceStage){marker="> "}
-  fmt.Fprintf(&b,"%s%s: %s\\n",marker,p.Label,val)
+ if m.stage==browsing || !m.hasSelection {
+  fmt.Fprintf(&b,"COMMAND HELP\n\n%s\n%s\n\n",recipe.Label,recipe.Name)
+  if recipe.Description!=""{fmt.Fprintf(&b,"%s\n\n",recipe.Description)}
+  if len(recipe.Params)==0{b.WriteString("No parameters required.\n")}
+  for i,p:=range recipe.Params{
+   fmt.Fprintf(&b,"%d. %s\n",i+1,p.Label)
+   for _,line:=range strings.Split(parameterHelp(p),"\n"){fmt.Fprintf(&b,"   %s\n",line)}
+   b.WriteString("\n")
+  }
+  b.WriteString("Press Enter to configure and run.")
+  if m.err!=""{b.WriteString("\n\n"+m.err)}
+  return b.String()
  }
- b.WriteString("\\nCommand line:\\n")
- b.WriteString(m.displayedCommand()+"\\n\\n")
  switch m.stage{
- case inputStage:
-  p:=m.selected.Params[m.argument]
-  fmt.Fprintf(&b,"Parameter %d/%d: %s\\n",m.argument+1,len(m.selected.Params),p.Label)
-  b.WriteString(m.entry.View()+"\\n\\nEnter next · Esc back")
- case choiceStage:
-  b.WriteString(m.choices.View()+"\\nEnter select · Esc back")
+ case inputStage,choiceStage:
+  if m.argument>=len(recipe.Params){return "Invalid parameter selection"}
+  p:=recipe.Params[m.argument]
+  fmt.Fprintf(&b,"PARAMETER %d OF %d\n\n%s\n\n",m.argument+1,len(recipe.Params),p.Label)
+  b.WriteString(parameterHelp(p)+"\n\n")
+  if m.stage==inputStage{
+   b.WriteString(m.entry.View())
+   b.WriteString("\n\nEnter: next parameter · Esc: back")
+  }else{
+   b.WriteString(m.choices.View())
+   b.WriteString("\nEnter: select value · Esc: back")
+  }
  case confirmationStage:
-  b.WriteString("Ready to run.\\nEnter / y execute · e edit · Esc cancel")
+  fmt.Fprintf(&b,"READY TO RUN\n\n%s\n\n",recipe.Label)
+  if len(recipe.Params)==0{b.WriteString("No parameters required.\n")}
+  for i,p:=range recipe.Params{
+   v:=m.values[i]
+   if p.Type=="password"{v="<hidden>"}
+   fmt.Fprintf(&b,"%s: %s\n",p.Label,v)
+  }
+  b.WriteString("\nCommand line:\n"+m.displayedCommand())
+  b.WriteString("\n\nEnter / y: run · e: edit · Esc: cancel")
  case runningStage:
-  b.WriteString("Running command...")
- default:
-  b.WriteString("Select another command or press Enter to configure.")
+  b.WriteString("Running command...\n"+m.displayedCommand())
  }
- if m.err!=""{b.WriteString("\\n\\n"+m.err)}
+ if m.err!=""{b.WriteString("\n\n"+m.err)}
  return b.String()
 }
 func(m appModel) View()string{
@@ -261,7 +293,7 @@ func(m appModel) View()string{
  right:=rightStyle.Render(m.rightPanel())
  footer:="↑/↓ browse · / search · Enter select/run · Esc back · q quit"
  if m.chooser {footer="Choose recipe for just --choose · Enter select · q quit"}
- return lipgloss.JoinHorizontal(lipgloss.Top,left,right)+"\\n"+footer
+ return lipgloss.JoinHorizontal(lipgloss.Top,left,right)+"\n"+footer
 }
 func runTUI(file string,catalog Catalog)error{
  if len(catalog.Recipes)==0{return errors.New("no recipes found")}
