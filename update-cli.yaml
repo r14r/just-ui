@@ -56,6 +56,9 @@ workflows:
   build:
     description: Build the just-ui executable
     tasks: [build]
+  install:
+    description: Install just-ui into /usr/local/bin
+    tasks: [install]
 
 tasks:
   bootstrap:
@@ -89,3 +92,12 @@ tasks:
         command:
           exec: go
           args: [build, -o, dist/just-ui, .]
+  install:
+    description: Install the executable in /usr/local/bin
+    requires: [build]
+    steps:
+      - id: install-system
+        name: Install executable to /usr/local/bin/just-ui
+        command:
+          exec: just
+          args: [install]
