@@ -106,10 +106,42 @@ func TestParameterPanelSelection(t *testing.T){
  if err!=nil{t.Fatal(err)}
  model:=newModel("examples/justfile",catalog,false)
  model.width=100;model.height=30;model.resize()
- model.selected=catalog.Recipes[0];model.hasSelection=true
- model.values=make([]string,len(model.selected.Params))
- panel:=model.rightPanel()
- if !strings.Contains(panel,"Command line:"){t.Fatalf("missing command preview: %s",panel)}
+ // Browsing previews the highlighted recipe's help, not the command line.
+ for i,r:=range catalog.Recipes{
+  if r.Name!="build-book"{continue}
+  model.recipes.Select(i)
+  help:=model.rightPanel()
+  if !strings.Contains(help,"COMMAND HELP")||!strings.Contains(help,"Range: 1 to 99"){
+   t.Fatalf("missing highlighted command help: %s",help)
+  }
+  if strings.Contains(help,"Command line:"){t.Fatalf("command line should appear only after parameters: %s",help)}
+  model.selected=r;model.hasSelection=true;model.values=[]string{"42","modern"};model.stage=confirmationStage
+  confirmation:=model.rightPanel()
+  if !strings.Contains(confirmation,"Command line:")||!strings.Contains(confirmation,"build-book 42 modern"){
+   t.Fatalf("missing executable command preview after parameters: %s",confirmation)
+  }
+  return
+ }
+ t.Fatal("build-book recipe not found")
+}
+
+func TestParserSkipsJustfileAssignments(t *testing.T){
+ path:=filepath.Join(t.TempDir(),"justfile")
+ source:=`set shell := ["sh", "-cu"]
+foo := "bar"
+# @ui description Valid recipe
+test: bootstrap
+    echo test
+# @ui description Dependency recipe
+bootstrap:
+    echo bootstrap
+`
+ if err:=os.WriteFile(path,[]byte(source),0600);err!=nil{t.Fatal(err)}
+ cat,err:=parseFile(path);if err!=nil{t.Fatal(err)}
+ if len(cat.Recipes)!=2{t.Fatalf("expected 2 recipes, got %d: %+v",len(cat.Recipes),cat.Recipes)}
+ names:=map[string]bool{}
+ for _,r:=range cat.Recipes{names[r.Name]=true}
+ if !names["test"]||!names["bootstrap"]||names["set"]||names["foo"]{t.Fatalf("unexpected recipe names: %+v",names)}
 }
 
 func TestAllProjectCommandsDiscovered(t *testing.T){
