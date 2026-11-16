@@ -7,6 +7,7 @@ import (
     "os/exec"
     "strings"
     "errors"
+    tea "github.com/charmbracelet/bubbletea"
 )
 
 func TestParseExample(t *testing.T) {
@@ -109,4 +110,56 @@ func TestParameterPanelSelection(t *testing.T){
  model.values=make([]string,len(model.selected.Params))
  panel:=model.rightPanel()
  if !strings.Contains(panel,"Command line:"){t.Fatalf("missing command preview: %s",panel)}
+}
+
+func TestAllProjectCommandsDiscovered(t *testing.T){
+ catalog,err:=parseFile("Justfile")
+ if err!=nil{t.Fatal(err)}
+ expected:=[]string{"default","bootstrap","test","check","build","install","run","choose","version"}
+ names:=map[string]bool{}
+ for _,r:=range catalog.Recipes{names[r.Name]=true;if r.Description==""{t.Errorf("missing help comment for %s",r.Name)}}
+ for _,name:=range expected{if !names[name]{t.Errorf("missing recipe %s",name)}}
+}
+func TestParameterRangeAndDescription(t *testing.T){
+ catalog,err:=parseFile(filepath.Join("examples","justfile"))
+ if err!=nil{t.Fatal(err)}
+ for _,r:=range catalog.Recipes{
+  if r.Name!="build-book"{continue}
+  p:=r.Params[0]
+  if p.Description==""||p.Min!="1"||p.Max!="99"{t.Fatalf("missing parameter metadata: %+v",p)}
+  if validate(p,"0")==nil||validate(p,"100")==nil||validate(p,"42")!=nil{t.Fatal("numeric range validation failed")}
+  help:=parameterHelp(p)
+  if !strings.Contains(help,"Range: 1 to 99"){t.Fatalf("incorrect parameter range help: %s",help)}
+  return
+ }
+ t.Fatal("build-book missing")
+}
+func TestHighlightedRecipePreviewChanges(t *testing.T){
+ catalog,err:=parseFile(filepath.Join("examples","justfile"))
+ if err!=nil{t.Fatal(err)}
+ m:=newModel("examples/justfile",catalog,false)
+ first:=m.rightPanel()
+ m.recipes.Select(1)
+ second:=m.rightPanel()
+ if first==second{t.Fatal("highlight did not update recipe help")}
+ if strings.Contains(first,`\n`){t.Fatal("literal escaped newline in help preview")}
+}
+func TestFocusedParameterWizard(t *testing.T){
+ catalog,err:=parseFile(filepath.Join("examples","justfile"))
+ if err!=nil{t.Fatal(err)}
+ m:=newModel("examples/justfile",catalog,false)
+ for _,r:=range catalog.Recipes{
+  if r.Name=="build-book"{
+   m.selected=r;m.hasSelection=true;m.values=make([]string,len(r.Params));m.argument=0
+   _=m.advance()
+   if m.stage!=inputStage{t.Fatalf("first parameter should be input, got %v",m.stage)}
+   right:=m.rightPanel()
+   if !strings.Contains(right,"PARAMETER 1 OF 2")||strings.Contains(right,"Choose the layout template"){t.Fatalf("wizard shows more than active parameter: %s",right)}
+   updated,_:=m.Update(tea.KeyMsg{Type:tea.KeyEnter})
+   m=updated.(appModel)
+   if m.stage!=inputStage{ /* Required empty value must remain on input field. */ }
+   return
+  }
+ }
+ t.Fatal("build-book missing")
 }
