@@ -1,26 +1,28 @@
 # @ui group Development
 # @ui label Run tests
-# @ui description Run the selected test suite
-# @ui param suite type=select options=all|unit|integration default=all label=Test_suite
+# @ui description Run the selected test suite.
+# @ui param suite type=select options=all|unit|integration default=all label=Test_suite description=Choose_which_test_suite_to_run
 test suite="all":
     echo "Testing {{suite}}"
 
 # @ui label Build application
-# @ui description Build for a specified operating system
-# @ui param target type=select options=linux|darwin|windows default=linux
+# @ui description Build the application for the specified operating system.
+# @ui param target type=select options=linux|darwin|windows default=linux description=Target_operating_system
 [group('Build')]
 build target="linux":
     echo "Building for {{target}}"
 
 # @ui group Books
 # @ui label Build a book
-# @ui param book type=text label=Book_ID
-# @ui param layout type=select options=advent|modern|classic default=advent
+# @ui description Build one book with a selected layout.
+# @ui param book type=number min=1 max=99 label=Book_ID description=Book_number_from_1_to_99
+# @ui param layout type=select options=advent|modern|classic default=advent description=Choose_the_layout_template
 build-book book layout="advent":
     echo "Build book {{book}} with {{layout}}"
 
 # @ui group Maintenance
 # @ui label Clean generated outputs
+# @ui description Show the cleanup operation without deleting real files.
 # @ui confirm
 clean:
     echo "Clean is a demo - no files removed"
