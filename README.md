@@ -1,6 +1,6 @@
 # just-ui
 
-Version: **0.1.5**
+Version: **0.1.6**
 
 Interactive **terminal** command chooser and runner for Justfiles. No HTTP server, browser, or frontend build. Built using Go and Bubble Tea/Bubbles.
 
@@ -17,7 +17,8 @@ git pull --ff-only origin main
 just bootstrap
 just check
 just build
-./dist/just-ui
+just install
+just-ui
 ```
 
 The CLI locates a Justfile from the current directory upward. Use `--justfile path/to/justfile` to choose a specific one.
@@ -27,6 +28,10 @@ just-ui --justfile examples/justfile
 just-ui --list
 just-ui --version
 ```
+
+### Installation
+
+Run `just install` to execute the checks, build the binary and install it as `/usr/local/bin/just-ui`. Installation uses `sudo` only when the directory or existing executable is not writable. Verify with `just-ui --version` (make sure `/usr/local/bin` is on `PATH`). The `update-cli.yaml` install workflow invokes the same recipe.
 
 ### Two-column layout
 
