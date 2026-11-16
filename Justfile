@@ -22,6 +22,11 @@ build: check
     mkdir -p dist
     go build -o dist/just-ui .
 
+# Build and install the CLI in /usr/local/bin (sudo only when needed).
+install: build
+    @if [ -w /usr/local/bin ] && { [ ! -e /usr/local/bin/just-ui ] || [ -w /usr/local/bin/just-ui ]; }; then install -m 755 dist/just-ui /usr/local/bin/just-ui; else command -v sudo >/dev/null || { echo "ERROR: sudo is required to install in /usr/local/bin" >&2; exit 1; }; sudo install -d /usr/local/bin && sudo install -m 755 dist/just-ui /usr/local/bin/just-ui; fi
+    @/usr/local/bin/just-ui --version
+
 run: bootstrap
     go run . --justfile examples/justfile
 
