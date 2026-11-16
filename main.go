@@ -53,6 +53,9 @@ func parseFile(path string) (Catalog,error) {
   if strings.HasPrefix(line,"[")&&strings.HasSuffix(trim,"]"){attrs=append(attrs,trim);continue}
   if trim==""{continue}
   if strings.HasPrefix(line," ")||strings.HasPrefix(line,"\t"){continue}
+  // Justfile assignments (including "set shell :=") are not recipes.
+  // A recipe declaration uses ":" but never the ":=" assignment operator.
+  if strings.Contains(line, ":=") {comments=nil;attrs=nil;continue}
   m:=header.FindStringSubmatch(line)
   if m==nil{comments=nil;attrs=nil;continue}
   r:=Recipe{Name:m[1],Label:m[1],Group:"Other"}
